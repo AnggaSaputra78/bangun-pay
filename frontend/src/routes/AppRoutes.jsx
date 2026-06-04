@@ -6,6 +6,9 @@ import MainLayout from '../layouts/MainLayout'
 import DashboardPage from '../features/dashboard/pages/DashboardPage'
 import ProjectsListPage from '../features/projects/pages/ProjectsListPage'
 import ProjectDetailPage from '../features/projects/pages/ProjectDetailPage'
+import ExpensesListPage from '../features/expenses/pages/ExpensesListPage'
+import ReportsPage from '../features/reports/pages/ReportsPage' // 🆕
+import MonitoringPage from '../features/monitoring/pages/MonitoringPage'
 
 const Placeholder = ({ title }) => (
   <div className="card text-center py-12">
@@ -35,10 +38,12 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/projects" element={<ProjectsListPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
-          <Route path="/expenses" element={<Placeholder title="Transaksi" />} />
+          <Route path="/expenses" element={<ExpensesListPage />} />
+          <Route path="/reports" element={<ReportsPage />} /> {/* 🆕 */}
           <Route path="/monitoring" element={<Placeholder title="Monitoring" />} />
           <Route path="/notifications" element={<Placeholder title="Notifikasi" />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/monitoring" element={<MonitoringPage />} /> {/* 🆕 */}
         </Route>
       </Route>
 

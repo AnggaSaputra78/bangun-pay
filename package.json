@@ -1,9 +1,43 @@
 {
   "name": "bangun-pay",
   "version": "1.0.0",
+  "description": "BangunPay - Construction Project Fund Management System",
   "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
     "client": "npm run dev --prefix frontend",
     "server": "npm run dev --prefix backend",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "server:start": "npm start --prefix backend",
+    "server:install": "npm install --prefix backend",
+    "server:build": "echo 'Backend tidak perlu build (Node.js runtime)'",
+    "server:seed": "node backend/seed.js",
+    "server:seed-admin": "node backend/seed-admin.js",
+    "server:logs": "pm2 logs bangunpay-api",
+    "client:install": "npm install --prefix frontend",
+    "client:build": "npm run build --prefix frontend",
+    "client:preview": "npm run preview --prefix frontend",
+    "install:all": "npm run server:install && npm run client:install",
+    "build:all": "npm run client:build",
+    "clean": "rimraf frontend/dist backend/logs frontend/node_modules/.vite",
+    "lint:backend": "npm run lint --prefix backend",
+    "lint:frontend": "npm run lint --prefix frontend",
+    "lint": "concurrently \"npm run lint:backend\" \"npm run lint:frontend\"",
+    "format:backend": "npm run format --prefix backend",
+    "format:frontend": "npm run format --prefix frontend",
+    "format": "concurrently \"npm run format:backend\" \"npm run format:frontend\""
+  },
+  "keywords": [
+    "construction",
+    "finance",
+    "project-management",
+    "mern-stack"
+  ],
+  "author": "BangunPay Team",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.10"
+  },
+  "dependencies": {
+    "ngrok": "^5.0.0-beta.2"
   }
 }

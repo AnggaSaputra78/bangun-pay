@@ -1,22 +1,25 @@
-import express from 'express'
-import expenseController from '../controllers/Expense.controller.js'
-import validate from '../middlewares/validation.middleware.js'
+import express from 'express';
+import expenseController from '../controllers/Expense.controller.js';
+import validate from '../middlewares/validation.middleware.js';
 import {
   createExpenseValidator,
   expenseIdValidator,
   projectIdParamValidator,
-} from '../validators/Expense.validator.js'
-import { protect, restrictTo } from '../middlewares/auth.middleware.js'
-import ExpenseCategory from '../models/ExpenseCategory.model.js'
-import ApiResponse from '../helpers/ApiResponse.js'
+} from '../validators/Expense.validator.js';
+import { protect, restrictTo } from '../middlewares/auth.middleware.js';
+import ExpenseCategory from '../models/ExpenseCategory.model.js';
+import Expense from '../models/Expense.model.js';
+import projectRepository from '../repositories/Project.repository.js';
+import ApiResponse from '../helpers/ApiResponse.js';
 
-const router = express.Router()
+const router = express.Router();
 
 // Semua route di bawah ini memerlukan authentication
-router.use(protect)
+router.use(protect);
 
 // ============================================
 // CATEGORY ROUTES
+// PENTING: Route statis harus di atas route /:id
 // ============================================
 
 /**
@@ -29,17 +32,17 @@ router.get('/categories', async (request, response, next) => {
     const categories = await ExpenseCategory.find({
       isActive: true,
       deletedAt: null,
-    }).sort({ name: 1 })
+    }).sort({ name: 1 });
 
     return ApiResponse.success(
       response,
       categories,
       'Categories retrieved successfully'
-    )
+    );
   } catch (error) {
-    next(error)
+    next(error);
   }
-})
+});
 
 /**
  * @route   POST /api/v1/expenses/categories
@@ -51,10 +54,10 @@ router.post(
   restrictTo('super_admin', 'admin'),
   async (request, response, next) => {
     try {
-      const { name, description, color } = request.body
+      const { name, description, color } = request.body;
 
       if (!name) {
-        return ApiResponse.error(response, 'Category name is required', 400)
+        return ApiResponse.error(response, 'Category name is required', 400);
       }
 
       // Generate slug from name
@@ -62,20 +65,20 @@ router.post(
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '')
+        .replace(/^-+|-+$/g, '');
 
       // Check if category already exists
       const existing = await ExpenseCategory.findOne({
         $or: [{ slug }, { name }],
         deletedAt: null,
-      })
+      });
 
       if (existing) {
         return ApiResponse.error(
           response,
           'Category with this name already exists',
           400
-        )
+        );
       }
 
       const category = await ExpenseCategory.create({
@@ -83,18 +86,18 @@ router.post(
         slug,
         description: description || '',
         color: color || '#F97316',
-      })
+      });
 
       return ApiResponse.created(
         response,
         category,
         'Category created successfully'
-      )
+      );
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
-)
+);
 
 /**
  * @route   PUT /api/v1/expenses/categories/:id
@@ -106,43 +109,42 @@ router.put(
   restrictTo('super_admin', 'admin'),
   async (request, response, next) => {
     try {
-      const { id } = request.params
-      const { name, description, color, isActive } = request.body
+      const { id } = request.params;
+      const { name, description, color, isActive } = request.body;
 
-      const category = await ExpenseCategory.findById(id)
+      const category = await ExpenseCategory.findById(id);
       if (!category || category.deletedAt) {
-        return ApiResponse.error(response, 'Category not found', 404)
+        return ApiResponse.error(response, 'Category not found', 404);
       }
 
-      const updateData = {}
+      const updateData = {};
       if (name !== undefined) {
-        updateData.name = name
+        updateData.name = name;
         updateData.slug = name
           .toLowerCase()
           .replace(/[^\w\s-]/g, '')
           .replace(/[\s_-]+/g, '-')
-          .replace(/^-+|-+$/g, '')
+          .replace(/^-+|-+$/g, '');
       }
-      if (description !== undefined) updateData.description = description
-      if (color !== undefined) updateData.color = color
-      if (isActive !== undefined) updateData.isActive = isActive
+      if (description !== undefined) updateData.description = description;
+      if (color !== undefined) updateData.color = color;
+      if (isActive !== undefined) updateData.isActive = isActive;
 
-      const updated = await ExpenseCategory.findByIdAndUpdate(
-        id,
-        updateData,
-        { new: true, runValidators: true }
-      )
+      const updated = await ExpenseCategory.findByIdAndUpdate(id, updateData, {
+        new: true,
+        runValidators: true,
+      });
 
       return ApiResponse.success(
         response,
         updated,
         'Category updated successfully'
-      )
+      );
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
-)
+);
 
 /**
  * @route   DELETE /api/v1/expenses/categories/:id
@@ -154,39 +156,105 @@ router.delete(
   restrictTo('super_admin'),
   async (request, response, next) => {
     try {
-      const { id } = request.params
+      const { id } = request.params;
 
-      const category = await ExpenseCategory.findById(id)
+      const category = await ExpenseCategory.findById(id);
       if (!category || category.deletedAt) {
-        return ApiResponse.error(response, 'Category not found', 404)
+        return ApiResponse.error(response, 'Category not found', 404);
       }
 
       // Soft delete
-      category.deletedAt = new Date()
-      await category.save()
+      category.deletedAt = new Date();
+      await category.save();
 
       return ApiResponse.success(
         response,
         null,
         'Category deleted successfully'
-      )
+      );
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
-)
+);
 
 // ============================================
-// EXPENSE ROUTES
+// EXPENSE ROUTES (Spesifik / Static)
 // ============================================
 
 /**
  * @route   GET /api/v1/expenses/recent
  * @desc    Get recent expenses across all projects
  * @access  Private
- * @query   limit (default: 5)
  */
-router.get('/recent', expenseController.getRecentExpenses)
+router.get('/recent', expenseController.getRecentExpenses);
+
+/**
+ * @route   GET /api/v1/expenses
+ * @desc    Get all expenses with filters (cross-project) + Stats
+ * @access  Private
+ * @query   search, projectId, categoryId, paymentMethod, startDate, endDate, page, limit, sort
+ */
+router.get('/', async (request, response, next) => {
+  try {
+    const {
+      search = '',
+      projectId,
+      categoryId,
+      paymentMethod,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 20,
+      sort = '-expenseDate',
+    } = request.query;
+
+    // Build filter
+    const filter = { deletedAt: null };
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+    if (projectId) filter.projectId = projectId;
+    if (categoryId) filter.categoryId = categoryId;
+    if (paymentMethod) filter.paymentMethod = paymentMethod;
+    if (startDate || endDate) {
+      filter.expenseDate = {};
+      if (startDate) filter.expenseDate.$gte = new Date(startDate);
+      if (endDate) filter.expenseDate.$lte = new Date(endDate);
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [expenses, total] = await Promise.all([
+      Expense.find(filter)
+        .populate('categoryId', 'name slug color')
+        .populate('projectId', 'name location')
+        .populate('createdBy', 'name email')
+        .sort(sort)
+        .skip(skip)
+        .limit(parseInt(limit)),
+      Expense.countDocuments(filter),
+    ]);
+
+    return ApiResponse.paginated(
+      response,
+      expenses,
+      {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+      'Expenses retrieved successfully'
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * @route   GET /api/v1/expenses/project/:projectId
@@ -197,7 +265,7 @@ router.get(
   '/project/:projectId',
   validate(projectIdParamValidator),
   expenseController.getExpensesByProject
-)
+);
 
 /**
  * @route   GET /api/v1/expenses/project/:projectId/category-breakdown
@@ -208,7 +276,7 @@ router.get(
   '/project/:projectId/category-breakdown',
   validate(projectIdParamValidator),
   expenseController.getExpensesByCategory
-)
+);
 
 /**
  * @route   POST /api/v1/expenses
@@ -220,7 +288,12 @@ router.post(
   restrictTo('super_admin', 'admin', 'mandor'),
   validate(createExpenseValidator),
   expenseController.createExpense
-)
+);
+
+// ============================================
+// DYNAMIC ROUTES (/:id) 
+// PENTING: HARUS DILETAKKAN DI PALING BAWAH
+// ============================================
 
 /**
  * @route   GET /api/v1/expenses/:id
@@ -232,31 +305,30 @@ router.get(
   validate(expenseIdValidator),
   async (request, response, next) => {
     try {
-      const Expense = (await import('../models/Expense.model.js')).default
       const expense = await Expense.findById(request.params.id)
         .where({ deletedAt: null })
         .populate('categoryId', 'name slug color')
-        .populate('projectId', 'name')
-        .populate('createdBy', 'name email')
+        .populate('projectId', 'name location owner')
+        .populate('createdBy', 'name email');
 
       if (!expense) {
-        return ApiResponse.error(response, 'Expense not found', 404)
+        return ApiResponse.error(response, 'Expense not found', 404);
       }
 
       return ApiResponse.success(
         response,
         expense,
         'Expense retrieved successfully'
-      )
+      );
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
-)
+);
 
 /**
  * @route   PUT /api/v1/expenses/:id
- * @desc    Update expense (recalculates project budget)
+ * @desc    Update expense (recalculates project budget if amount changed)
  * @access  Private (super_admin, admin)
  */
 router.put(
@@ -265,51 +337,46 @@ router.put(
   validate(expenseIdValidator),
   async (request, response, next) => {
     try {
-      const Expense = (await import('../models/Expense.model.js')).default
-      const projectRepository = (
-        await import('../repositories/Project.repository.js')
-      ).default
-
       const expense = await Expense.findById(request.params.id).where({
         deletedAt: null,
-      })
+      });
 
       if (!expense) {
-        return ApiResponse.error(response, 'Expense not found', 404)
+        return ApiResponse.error(response, 'Expense not found', 404);
       }
 
-      const oldAmount = expense.amount
+      const oldAmount = expense.amount;
       const newAmount = request.body.amount
         ? Number(request.body.amount)
-        : oldAmount
+        : oldAmount;
 
       // Update expense
       const updated = await Expense.findByIdAndUpdate(
         request.params.id,
         { $set: request.body },
         { new: true, runValidators: true }
-      )
+      );
 
       // Adjust project budget if amount changed
       if (oldAmount !== newAmount) {
-        const difference = newAmount - oldAmount
+        const difference = newAmount - oldAmount;
         await projectRepository.updateBudget(
           expense.projectId,
           difference,
           'add'
-        )
+        );
       }
 
       return ApiResponse.success(
         response,
         updated,
         'Expense updated successfully'
-      )
+      );
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
-)
+);
 
 /**
  * @route   DELETE /api/v1/expenses/:id
@@ -321,6 +388,6 @@ router.delete(
   restrictTo('super_admin', 'admin'),
   validate(expenseIdValidator),
   expenseController.deleteExpense
-)
+);
 
-export default router
+export default router;

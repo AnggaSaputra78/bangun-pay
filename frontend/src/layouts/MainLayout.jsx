@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   FolderKanban,
   Receipt,
+  FileText,
   BarChart3,
   Bell,
   Menu,
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Proyek', href: '/projects', icon: FolderKanban },
   { name: 'Transaksi', href: '/expenses', icon: Receipt },
+  { name: 'Laporan', href: '/reports', icon: FileText },
   { name: 'Monitoring', href: '/monitoring', icon: BarChart3 },
   { name: 'Notifikasi', href: '/notifications', icon: Bell },
 ]
@@ -79,7 +81,7 @@ const MainLayout = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
             {navigation.map((item) => (
               <NavLink
                 key={item.name}
@@ -155,7 +157,7 @@ const MainLayout = () => {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             <button
               onClick={toggleTheme}
               className="p-2 hover:bg-gray-100 dark:hover:bg-navy-700 rounded-xl transition"
@@ -167,7 +169,10 @@ const MainLayout = () => {
               )}
             </button>
 
-            <button className="relative p-2 hover:bg-gray-100 dark:hover:bg-navy-700 rounded-xl transition">
+            <button
+              onClick={() => navigate('/notifications')}
+              className="relative p-2 hover:bg-gray-100 dark:hover:bg-navy-700 rounded-xl transition"
+            >
               <Bell className="w-5 h-5 text-navy-900 dark:text-white" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-navy-800" />
             </button>
