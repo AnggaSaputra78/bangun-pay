@@ -1,0 +1,57 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { Provider } from 'react-redux'
+import { QueryClient, QueryClientProvider } from 'react-query'
+import { Toaster } from 'react-hot-toast'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App'
+import store from './store/store'
+import { ThemeProvider } from './contexts/ThemeContext'
+import './index.css'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+})
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <App />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#1E293B',
+                  color: '#fff',
+                  borderRadius: '12px',
+                },
+                success: {
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#fff',
+                  },
+                },
+                error: {
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </Provider>
+  </React.StrictMode>
+)
